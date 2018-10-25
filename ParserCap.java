@@ -42,13 +42,12 @@ class ParserCap{
 		while(true){
 			System.out.format("\n--------------Packet %d ------------------------------------------------------------", packetNumber);
 			PacketHeader(filecontent);
+			System.out.format("Packet length : %d bytes on wire\n\n", packetLength);
 			PacketParser(filecontent);
-
 			startPacket=endPacket;
 			packetNumber++;
 			if(endPacket==fileLength){
 				System.out.println("\n\nEnd of while");
-				System.out.format("\npacket length : %d\n\n", packetLength);
 				break;
 			}
 		}
@@ -137,7 +136,7 @@ class ParserCap{
 			if(protocol !=0){
 				Layer4 layer4 = new Layer4();
 				if(protocol==1){
-					layer4.PrintTcp(packet);
+					layer4.PrintTcp(packet, packetLength);
 				}
 				else if(protocol==2){
 					layer4.PrintUdp(packet);
