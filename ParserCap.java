@@ -31,7 +31,7 @@ class ParserCap{
 		  for(int i=0; i<filecontent.length; i++){
 		  System.out.format("%02X ", filecontent[i]); 
 		  }*/
-		if(testMagicNum(filecontent)){
+		if(testMagicNum(filecontent, 0)){
 			System.out.println( "\nThe file is a pcap format !\nStarting execution ..." );
 		}
 		else{
@@ -71,17 +71,26 @@ class ParserCap{
 			System.out.println(e.getMessage());
 		}
 	}
-	boolean testMagicNum(byte [] filecontent){
+	boolean testMagicNum(byte [] filecontent, int which){
+		int startMagicNum=0;
+		StringBuilder mNb=null;
+		if(which==0){
+			startMagicNum=0;
+			mNb= new StringBuilder("d4c3b2a1");
+		}
+		else{
+			startMagicNum=236;
+			mNb= new StringBuilder("63825363");
+		}
 		byte [] MagicNum = new byte[4];
-		for(int i=0; i<4; i++){
-			MagicNum[i] = filecontent[i];
+		for(int i=startMagicNum; i<startMagicNum+4; i++){
+			MagicNum[i-startMagicNum] = filecontent[i];
 		}
 		StringBuilder sb = new StringBuilder(8);
 		for(byte b: MagicNum){
 			sb.append(String.format("%02x", b));
 		}
-		StringBuilder b= new StringBuilder("d4c3b2a1");
-		if (sb.toString().equals(b.toString())){
+		if (sb.toString().equals(mNb.toString())){
 			return true;	
 		}
 		else{
@@ -103,7 +112,7 @@ class ParserCap{
 	}
 
 	void PacketParser(byte [] filecontent){	
-
+		byte[] packetAfterUdp=null;
 		byte[] FirstPacket=new byte[packetLength];
 		for(int i=endPacket; i<packetLength+endPacket; i++){
 			FirstPacket[i-endPacket]=filecontent[i];
@@ -118,30 +127,47 @@ class ParserCap{
 		int type = packetEthernet.PrintEth(EthPacket);
 		endPacket = endPacket+packetLength;
 		if(type==14){
-			byte[] packet= new byte[endPacket];
-			for(int i=endEth; i<endPacket; i++){
-				packet[i-endEth]=filecontent[i];
+			int arpSize = 28;
+			byte[] packetarp= new byte[arpSize];
+			for(int i=endEth; i<endEth+arpSize; i++){
+				packetarp[i-endEth]=filecontent[i];
 			}
 			Arp packetArp = new Arp();
-			packetArp.PrintArp(packet);
+			packetArp.PrintArp(packetarp);
 		}
 		else if(type==8){
+			int ipSize=20;
+			int endIp=endEth+ipSize;
 			byte[] packet= new byte[endPacket];
 			for(int i=endEth; i<endPacket; i++){
 				packet[i-endEth]=filecontent[i];
 			}
 			Ip packetIp = new Ip();
-			int protocol =packetIp.PrintIp(packet);
+			int protocol=packetIp.PrintIp(packet);
 			//packetIp.ReassemblyIp(packet);
 			if(protocol !=0){
+				int thisSize = endPacket-endIp;
+				byte[] packetL4= new byte[thisSize];
+
+				for(int i=endIp; i<endPacket; i++){
+					packetL4[i-endIp]=filecontent[i];
+				}
+
 				Layer4 layer4 = new Layer4();
 				if(protocol==1){
-					layer4.PrintTcp(packet, packetLength);
+					layer4.PrintTcp(packetL4, packetLength);
 				}
 				else if(protocol==2){
-					layer4.PrintUdp(packet);
+					int sizeUdp=8;
+					int sizeAfterUdp = thisSize-sizeUdp;
+					packetAfterUdp=new byte[sizeAfterUdp];
+					packetAfterUdp=layer4.PrintUdp(packetL4, packetLength);
 				}
 			}
+		}
+		AppLayer applicationLayer = new AppLayer();
+		if (testMagicNum(packetAfterUdp, 1)){
+			applicationLayer.PrintDhcp(packetAfterUdp);
 		}
 	}
 }

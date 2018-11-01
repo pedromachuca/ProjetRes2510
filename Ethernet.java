@@ -2,10 +2,9 @@ import java.io.*;
 
 class Ethernet{
 	public int PrintEth(byte[] data){
-		System.out.print("Ethernet    ");
+		System.out.println("Protocol: Ethernet    ");
 		System.out.print("Mac DST              ");
 		System.out.println("Mac SRC  ");
-		System.out.print("            ");
 		for(int i=0; i<6; i++){
 			System.out.format("%02X ", data[i]);    
 		}

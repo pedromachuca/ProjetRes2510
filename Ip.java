@@ -14,7 +14,7 @@ class Ip{
 		for(int i=16; i<20; i++){
 			System.out.format("%d ",data[i]&255);
 		}
-		System.out.print("\n\n      Protocol :");
+		System.out.print("\n\n      Protocol:");
 		if(data[9]== 1){
 			System.out.print("ICMP ");
 			if(data[20]==8){
@@ -27,14 +27,15 @@ class Ip{
 				//TO DO : Other case ?
 			}
 			System.out.format("id=0x%02X%02X", data[24], data[25]);
+			System.out.println("");
 
 		}
 		else if(data[9]==6){
-			System.out.print("TCP\n");
+			System.out.print(" TCP\n");
 			return 1;
 		}
 		else if(data[9]==17){
-			System.out.print("UDP\n");
+			System.out.print(" UDP\n");
 			return 2;
 		}
 		return 0;
