@@ -2,7 +2,8 @@ class Layer4{
 	
 	byte [] data=null;
 	int packetLength=0;
-	
+	long nextSeqNum =0;
+
 	public Layer4(byte [] data1, int packetLength){
 		this.data=data1;
 		this.packetLength=packetLength;
@@ -63,7 +64,7 @@ class Layer4{
 		//Format data[13], data[14]: 2 octet -> window size value
 		//Format data[15], data[16]: checksum 
 		//Then Options on 20 bytes, Max segment size, SACK permitted, Timestamps, No-Operation(NOP), window scale 
-		long nextSeqNum =0;
+		
 		if(dataLength>6){
 			nextSeqNum= sequenceNumber +(long)dataLength;
 		} 
@@ -88,6 +89,11 @@ class Layer4{
 		int dataLength=packetLength-34-headerLength*4;
 		return dataLength;
 	}
+
+	public long nextSeNb(){
+		return nextSeqNum;
+	}
+
 	public int id(){
 		return 1;
 	}
@@ -110,3 +116,39 @@ class Layer4{
 		return packetAfterUdp;
 	}
 }
+
+
+
+
+
+/*
+
+Si nouvelle seq :
+	id =1
+	stocknextseq
+	Si seq = acknum ou next seq num je me rappel plus
+		->id =1
+	Sinon 
+		->id=2
+		stocknextseq
+processus qui a chaque nextseq associe un id 
+SI on a cette nextseq alors on recupere l'id correspondant
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/

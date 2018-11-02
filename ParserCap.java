@@ -14,7 +14,7 @@ class ParserCap{
 	//offset de départ pour ignorer le Global Header
 	int startPacket=24;
 	int endPacket=0;
-	ArrayList<byte[]> httpconv=new ArrayList<byte[]>(); 
+	ArrayList<httpConv> arrayhttpconv=new ArrayList<httpConv>(); 
 
 	public ParserCap(String [] args){
 
@@ -50,7 +50,7 @@ class ParserCap{
 			startPacket=endPacket;
 			packetNumber++;
 			if(endPacket==fileLength){
-				PrintConv(httpconv);
+				PrintConv(arrayhttpconv);
 						// String s =new String(httpconv);
 					// System.out.println("Conversation : "+s);
 				System.out.println("\n\nEnd of while");
@@ -172,6 +172,7 @@ class ParserCap{
 					
 					if(packetAfterTcp!=null){
 						tcp=1;
+						id =layer4.id();
 					}
 				}
 				else if(protocol==2){
@@ -180,7 +181,6 @@ class ParserCap{
 					int sizeAfterUdp = thisSize-sizeUdp;
 					packetAfterUdp=new byte[sizeAfterUdp];
 					packetAfterUdp=layer4.PrintUdp(packetL4);
-					id =layer4.id();
 				}
 			}
 		}
@@ -194,10 +194,10 @@ class ParserCap{
 		if(tcp==1){
 			httpConv http = new httpConv(packetAfterTcp, id);
 			http.PrintHttp();
-			httpconv.add(http.Conversation());
+			arrayhttpconv.add(http);
 		}
 	}
-	public void PrintConv(ArrayList<byte[]> httpconv){
+	public void PrintConv(ArrayList<httpConv> httpconv){
 		char[] cbuf;		
 
 		System.out.println("\n      *****************************");
@@ -206,23 +206,23 @@ class ParserCap{
 		System.out.println("      *                           *");
 		System.out.println("      *****************************\n");
 
-		for(byte[] bytes:httpconv){
+		for(httpConv b:arrayhttpconv){
 			
-			cbuf = new char[bytes.length];
+			cbuf = new char[b.data.length];
 
-		    for (int i = 0; i < bytes.length; i++){
-		    		if(bytes[i]>= 0x20 && bytes[i] < 0x7F){
-		            	cbuf[i] = (char) bytes[i];
+		    for (int i = 0; i < b.data.length; i++){
+		    		if(b.data[i]>= 0x20 && b.data[i] < 0x7F){
+		            	cbuf[i] = (char) b.data[i];
 					}
-		 			else if(bytes[i]==10||bytes[i]==13){
-		 				cbuf[i] = (char) bytes[i];
+		 			else if(b.data[i]==10||b.data[i]==13){
+		 				cbuf[i] = (char) b.data[i];
 					}
 					else{
 		        		cbuf[i]='.';
 		        	}
 		    }
 		    System.out.print("      ");
-		    for (int i=0; i<bytes.length ; i++){
+		    for (int i=0; i<b.data.length ; i++){
 		    		if(i!=0&&cbuf[i-1]=='\n'){
 		    			System.out.print("      ");	
 		    		}
