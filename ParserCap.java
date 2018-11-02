@@ -1,4 +1,6 @@
 import java.io.*;
+import java.util.*; 
+
 class ParserCap{
 	public static void main(String[] args){
 		new ParserCap(args);
@@ -12,6 +14,7 @@ class ParserCap{
 	//offset de départ pour ignorer le Global Header
 	int startPacket=24;
 	int endPacket=0;
+	ArrayList<byte[]> httpconv=new ArrayList<byte[]>(); 
 
 	public ParserCap(String [] args){
 
@@ -47,6 +50,9 @@ class ParserCap{
 			startPacket=endPacket;
 			packetNumber++;
 			if(endPacket==fileLength){
+				PrintConv(httpconv);
+						// String s =new String(httpconv);
+					// System.out.println("Conversation : "+s);
 				System.out.println("\n\nEnd of while");
 				break;
 			}
@@ -98,6 +104,7 @@ class ParserCap{
 		}
 	}
 	void PacketHeader(byte [] filecontent){
+
 		int packetHSize = 16;
 		byte[] PacketHeader= new byte[packetHSize];
 		endPacket = startPacket + packetHSize;
@@ -112,6 +119,8 @@ class ParserCap{
 	}
 
 	void PacketParser(byte [] filecontent){	
+
+		int id = 0;
 		int udp=0;
 		int tcp=0;
 		byte[] packetAfterUdp=null;
@@ -156,10 +165,10 @@ class ParserCap{
 					packetL4[i-endIp]=filecontent[i];
 				}
 
-				Layer4 layer4 = new Layer4();
+				Layer4 layer4 = new Layer4(packetL4, packetLength);
 				if(protocol==1){
-					packetAfterTcp=new byte[endPacket];
-					packetAfterTcp=layer4.PrintTcp(packetL4, packetLength);
+					packetAfterTcp=new byte[layer4.sizeHttp()];
+					packetAfterTcp=layer4.PrintTcp();
 					
 					if(packetAfterTcp!=null){
 						tcp=1;
@@ -171,17 +180,55 @@ class ParserCap{
 					int sizeAfterUdp = thisSize-sizeUdp;
 					packetAfterUdp=new byte[sizeAfterUdp];
 					packetAfterUdp=layer4.PrintUdp(packetL4);
+					id =layer4.id();
 				}
 			}
 		}
-		AppLayer applicationLayer = new AppLayer();
+		
 		if(udp==1){
 			if (testMagicNum(packetAfterUdp, 1)){
-				applicationLayer.PrintDhcp(packetAfterUdp);
+				Dhcp dhcp = new Dhcp();
+				dhcp.PrintDhcp(packetAfterUdp);
 			}
 		}
 		if(tcp==1){
-			applicationLayer.PrintHttp(packetAfterTcp);
+			httpConv http = new httpConv(packetAfterTcp, id);
+			http.PrintHttp();
+			httpconv.add(http.Conversation());
 		}
+	}
+	public void PrintConv(ArrayList<byte[]> httpconv){
+		char[] cbuf;		
+
+		System.out.println("\n      *****************************");
+		System.out.println("      *                           *");
+		System.out.println("      *  Following TCP stream :   *");
+		System.out.println("      *                           *");
+		System.out.println("      *****************************\n");
+
+		for(byte[] bytes:httpconv){
+			
+			cbuf = new char[bytes.length];
+
+		    for (int i = 0; i < bytes.length; i++){
+		    		if(bytes[i]>= 0x20 && bytes[i] < 0x7F){
+		            	cbuf[i] = (char) bytes[i];
+					}
+		 			else if(bytes[i]==10||bytes[i]==13){
+		 				cbuf[i] = (char) bytes[i];
+					}
+					else{
+		        		cbuf[i]='.';
+		        	}
+		    }
+		    System.out.print("      ");
+		    for (int i=0; i<bytes.length ; i++){
+		    		if(i!=0&&cbuf[i-1]=='\n'){
+		    			System.out.print("      ");	
+		    		}
+		    	    System.out.print(cbuf[i]);        		
+		    }
+		System.out.println("");
+		}   		
 	}
 }

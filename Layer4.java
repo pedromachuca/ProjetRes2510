@@ -1,6 +1,14 @@
 class Layer4{
+	
+	byte [] data=null;
+	int packetLength=0;
+	
+	public Layer4(byte [] data1, int packetLength){
+		this.data=data1;
+		this.packetLength=packetLength;
+	}
 
-	public byte [] PrintTcp(byte [] data, int packetLength){
+	public byte [] PrintTcp(){
 
 		byte [] packetAfterTcp = null;
 
@@ -49,12 +57,9 @@ class Layer4{
 		if(rst!=0){
 			System.out.println("[RST] ");
 		}
+		int headerTcpLength=headerLength*4;
 
-		int dataLength=packetLength-34-headerLength*4;
-		System.out.println("dataLength : "+dataLength);
-		if(dataLength>headerLength*4){
-			dataLength = dataLength-6;
-		}
+		int dataLength=packetLength-34-headerTcpLength;
 		//Format data[13], data[14]: 2 octet -> window size value
 		//Format data[15], data[16]: checksum 
 		//Then Options on 20 bytes, Max segment size, SACK permitted, Timestamps, No-Operation(NOP), window scale 
@@ -66,17 +71,27 @@ class Layer4{
 			nextSeqNum= sequenceNumber;
 		}
 
-		System.out.println("      [Next Sequence Number :"+nextSeqNum+"]");
-
+		System.out.println("\n      [Next Sequence Number :"+nextSeqNum+"]");
 		if(data.length>dataLength&&dataLength>6){
 
 			packetAfterTcp = new byte[dataLength];
-			for(int i=headerLength*4; i<dataLength; i++){
-				packetAfterTcp[i-(headerLength*4)]=data[i];
+			for(int i=headerTcpLength; i<dataLength+headerTcpLength; i++){
+				packetAfterTcp[i-headerTcpLength]=data[i];
 			}
 		}
+		
 		return packetAfterTcp;
 	}
+
+	public int sizeHttp(){
+		int headerLength=(data[12]>>4)&0x0f;
+		int dataLength=packetLength-34-headerLength*4;
+		return dataLength;
+	}
+	public int id(){
+		return 1;
+	}
+
 	public byte [] PrintUdp(byte [] data){
 		int sizeUdp = 8;
 		int srcPort= (data[0]<< 8)&0xff00|data[1]&0x00ff;
