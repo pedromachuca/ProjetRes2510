@@ -112,7 +112,10 @@ class ParserCap{
 	}
 
 	void PacketParser(byte [] filecontent){	
+		int udp=0;
+		int tcp=0;
 		byte[] packetAfterUdp=null;
+		byte[] packetAfterTcp=null;
 		byte[] FirstPacket=new byte[packetLength];
 		for(int i=endPacket; i<packetLength+endPacket; i++){
 			FirstPacket[i-endPacket]=filecontent[i];
@@ -155,19 +158,30 @@ class ParserCap{
 
 				Layer4 layer4 = new Layer4();
 				if(protocol==1){
-					layer4.PrintTcp(packetL4, packetLength);
+					packetAfterTcp=new byte[endPacket];
+					packetAfterTcp=layer4.PrintTcp(packetL4, packetLength);
+					
+					if(packetAfterTcp!=null){
+						tcp=1;
+					}
 				}
 				else if(protocol==2){
+					udp = 1;
 					int sizeUdp=8;
 					int sizeAfterUdp = thisSize-sizeUdp;
 					packetAfterUdp=new byte[sizeAfterUdp];
-					packetAfterUdp=layer4.PrintUdp(packetL4, packetLength);
+					packetAfterUdp=layer4.PrintUdp(packetL4);
 				}
 			}
 		}
 		AppLayer applicationLayer = new AppLayer();
-		if (testMagicNum(packetAfterUdp, 1)){
-			applicationLayer.PrintDhcp(packetAfterUdp);
+		if(udp==1){
+			if (testMagicNum(packetAfterUdp, 1)){
+				applicationLayer.PrintDhcp(packetAfterUdp);
+			}
+		}
+		if(tcp==1){
+			applicationLayer.PrintHttp(packetAfterTcp);
 		}
 	}
 }
