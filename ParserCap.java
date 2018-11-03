@@ -15,6 +15,9 @@ class ParserCap{
 	int startPacket=24;
 	int endPacket=0;
 	ArrayList<httpConv> arrayhttpconv=new ArrayList<httpConv>(); 
+	long nextSequenceNb =0;
+	HashMap<Integer, Long> idNextSeq = new HashMap<Integer, Long>();
+	int key=0;
 
 	public ParserCap(String [] args){
 
@@ -120,7 +123,6 @@ class ParserCap{
 
 	void PacketParser(byte [] filecontent){	
 
-		int id = 0;
 		int udp=0;
 		int tcp=0;
 		byte[] packetAfterUdp=null;
@@ -169,10 +171,75 @@ class ParserCap{
 				if(protocol==1){
 					packetAfterTcp=new byte[layer4.sizeHttp()];
 					packetAfterTcp=layer4.PrintTcp();
+					nextSequenceNb = layer4.nextSeNb();
+					long seqNumber = layer4.seqNb();
+					long ackNumber = layer4.ackNb();
+					// Get a set of the entries
+				    // Set<Integer, Long> set = idNextSeq.entrySet();
+				      
+				    //  // Get an iterator
+				    //  Iterator<Integer> i = set.iterator();
 					
+				    if(idNextSeq.isEmpty()){
+				    	key=1;
+				    	idNextSeq.put(key, nextSequenceNb);
+				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				                System.out.println("\n1 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
+				         
+     					}
+				    }
+				    else if(idNextSeq.containsValue(seqNumber)||idNextSeq.containsValue(ackNumber)){
+				        
+				        for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				  
+     						if(seqNumber==entry.getValue()||ackNumber==entry.getValue()){
+				                key = entry.getKey();
+				                break; //breaking because its one to one map
+				            }
+     					}
+				    	idNextSeq.put(key, nextSequenceNb);
+				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				                System.out.println("\n2 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
+				      
+     					}
+				    }
+				    else if(idNextSeq.containsValue((seqNumber+1))){
+
+				        for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				  
+     						if((seqNumber+1)==entry.getValue()){
+				                key = entry.getKey();
+				                break; //breaking because its one to one map
+				            }
+     					}
+     					nextSequenceNb=nextSequenceNb+1;
+				    	idNextSeq.put(key, nextSequenceNb);
+
+				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				                System.out.println("\n2 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
+     					}
+				    }
+				    else if(idNextSeq.containsValue((ackNumber-1))){
+				    	 for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				  
+     						if((ackNumber-1)==entry.getValue()){
+				                key = entry.getKey();
+				                break; //breaking because its one to one map
+				            }
+     					}
+     					idNextSeq.put(key, nextSequenceNb);
+				    }
+				    else{
+				    	
+				    	key++;
+				    	System.out.println("ID : "+key);
+				    	idNextSeq.put(key, nextSequenceNb);
+				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
+				                System.out.println("\n3 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
+     					}
+				    }
 					if(packetAfterTcp!=null){
 						tcp=1;
-						id =layer4.id();
 					}
 				}
 				else if(protocol==2){
@@ -192,7 +259,7 @@ class ParserCap{
 			}
 		}
 		if(tcp==1){
-			httpConv http = new httpConv(packetAfterTcp, id);
+			httpConv http = new httpConv(packetAfterTcp, key);
 			http.PrintHttp();
 			arrayhttpconv.add(http);
 		}
@@ -209,7 +276,7 @@ class ParserCap{
 		for(httpConv b:arrayhttpconv){
 			
 			cbuf = new char[b.data.length];
-
+		System.out.println("ID : "+b.id);
 		    for (int i = 0; i < b.data.length; i++){
 		    		if(b.data[i]>= 0x20 && b.data[i] < 0x7F){
 		            	cbuf[i] = (char) b.data[i];

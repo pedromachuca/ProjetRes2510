@@ -3,6 +3,8 @@ class Layer4{
 	byte [] data=null;
 	int packetLength=0;
 	long nextSeqNum =0;
+	long sequenceNumber =0;
+	long ackNumber=0;
 
 	public Layer4(byte [] data1, int packetLength){
 		this.data=data1;
@@ -16,8 +18,8 @@ class Layer4{
 		int srcPort= (data[0]<< 8)&0xff00|data[1]&0x00ff;
 		int dstPort= (data[2]<< 8)&0xff00|data[3]&0x00ff;
 		System.out.println("      Src port :"+srcPort+" ->  Dst port :"+dstPort);
-		long sequenceNumber=((long)data[4]&0xFF)<<24|((long)data[5]&0xFF)<<16|((long)data[6]&0xFF)<<8|((long)data[7]&0xFF);
-		long ackNumber=((long)data[8]&0xFF)<<24|((long)data[9]&0xFF)<<16|((long)data[10]&0xFF)<<8|((long)data[11]&0xFF);
+		sequenceNumber=((long)data[4]&0xFF)<<24|((long)data[5]&0xFF)<<16|((long)data[6]&0xFF)<<8|((long)data[7]&0xFF);
+		ackNumber=((long)data[8]&0xFF)<<24|((long)data[9]&0xFF)<<16|((long)data[10]&0xFF)<<8|((long)data[11]&0xFF);
 
 		System.out.println("      Sequence Number:"+sequenceNumber);
 		System.out.println("      Acknowlegment Number:"+ackNumber);
@@ -68,9 +70,19 @@ class Layer4{
 		if(dataLength>6){
 			nextSeqNum= sequenceNumber +(long)dataLength;
 		} 
-		else{
+		else if(fin==1){
+			nextSeqNum= sequenceNumber+1;	
+		}
+		else if(syn==1&&ack==1){
+			nextSeqNum=sequenceNumber+1;
+		}
+		else if(syn==1&&ack==0){
+			nextSeqNum= sequenceNumber+1;
+		}
+		else if(syn==0&&ack==1){
 			nextSeqNum= sequenceNumber;
 		}
+		
 
 		System.out.println("\n      [Next Sequence Number :"+nextSeqNum+"]");
 		if(data.length>dataLength&&dataLength>6){
@@ -94,8 +106,12 @@ class Layer4{
 		return nextSeqNum;
 	}
 
-	public int id(){
-		return 1;
+	public long seqNb(){
+		return sequenceNumber;
+	}
+
+	public long ackNb(){
+		return ackNumber;
 	}
 
 	public byte [] PrintUdp(byte [] data){
