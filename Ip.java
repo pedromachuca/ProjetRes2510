@@ -44,11 +44,9 @@ class Ip{
 	public int nextProto(){
 		
 		if(data[9]==6){
-			System.out.print(" TCP\n");
 			return 1;
 		}
 		else if(data[9]==17){
-			System.out.print(" UDP\n");
 			return 2;
 		}
 		return 0;

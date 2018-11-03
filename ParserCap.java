@@ -78,15 +78,38 @@ class ParserCap{
 
 		int packetNumber = 1;
 		while(true){
-			System.out.format("\n--------------Packet %d ------------------------------------------------------------", packetNumber);
+			System.out.format("\n-------------- Packet %d ------------------------------------------------------------", packetNumber);
 			PacketHeader(filecontent);
 			System.out.format("Packet length : %d bytes on wire\n\n", packetLength);
 			PacketParser(filecontent);
 			startPacket=endPacket;
 			packetNumber++;
 			if(endPacket==fileLength){
+				System.out.format("\n-------------- End Packet -----------------------------------------------------------\n");
+				System.out.println("      \n"+idNextSeq.size()+" HTTP CONVERSATION HAVE BEEN SAVED");
+				System.out.println("Enter a number between 1 and "+idNextSeq.size()+"to display the corresponding conversation");
+				System.out.println("Enter n instead if you wish to leave the program.");
+				char c =' ';
+				while(!(Character.isDigit(c))&&c!='n'){
+					try{
+		  				BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+		        		c = (char)System.in.read();
+						 
+		  			}
+		  			catch(IOException e){
+		  				System.out.println("IOException has been caught");
+		  			}
+		  		}
+		  		if (c=='n'){
+		  			System.out.println("\n\nExiting the program !! ");
+		  			break;	
+		  		}
+		  		else{
+		  			int value=Character.getNumericValue(c);
+		  			//Passer la valeur numérique à arrayhttpconv
+		  			//pour afficher la bonne conversation 
+		  		}
 				PrintConv(arrayhttpconv);
-				System.out.println("\n\nEnd of while");
 				break;
 			}
 		}
@@ -165,8 +188,8 @@ class ParserCap{
 
 	void PacketParser(byte [] filecontent){	
 
-		int udp=0;
-		int tcp=0;
+		int underudp=0;
+		int undertcp=0;
 		byte[] packetAfterUdp=null;
 		byte[] packetAfterTcp=null;
 
@@ -201,7 +224,7 @@ class ParserCap{
 			}
 		}
 		else if(type==8){
-			
+
 			int ipSize=20;
 			int endIp=endEth+ipSize;
 			byte[] packet= new byte[endPacket];
@@ -226,7 +249,11 @@ class ParserCap{
 				Layer4 layer4 = new Layer4(packetL4, packetLength);
 				if(protocol==1){
 					packetAfterTcp=new byte[layer4.sizeHttp()];
-					packetAfterTcp=layer4.PrintTcp();
+					packetAfterTcp=layer4.ParseTcp();
+
+					if (tcp==1||all==1) {
+						layer4.PrintTcp();
+					}
 					nextSequenceNb = layer4.nextSeNb();
 					long seqNumber = layer4.seqNb();
 					long ackNumber = layer4.ackNb();
@@ -274,30 +301,39 @@ class ParserCap{
 				    	idNextSeq.put(key, nextSequenceNb);
 				    }
 					if(packetAfterTcp!=null){
-						tcp=1;
+						undertcp=1;
 					}
 				}
 				else if(protocol==2){
-					udp = 1;
+					underudp = 1;
 					int sizeUdp=8;
 					int sizeAfterUdp = thisSize-sizeUdp;
 					packetAfterUdp=new byte[sizeAfterUdp];
-					packetAfterUdp=layer4.PrintUdp(packetL4);
+					packetAfterUdp=layer4.ParseUdp();
+
+					if (udp==1||all==1) {
+						layer4.PrintUdp();
+					}
 				}
 			}
 		}
 		
-		if(udp==1){
+		if(underudp==1){
 			if (testMagicNum(packetAfterUdp, 1)){
-				Dhcp dhcp = new Dhcp();
-				dhcp.PrintDhcp(packetAfterUdp);
+
+				Dhcp protoDhcp = new Dhcp(packetAfterUdp);
+				if (dhcp==1||all==1) {
+					protoDhcp.PrintDhcp();
+				}
 			}
 		}
 
-		if(tcp==1){
-			httpConv http = new httpConv(packetAfterTcp, key);
-			http.PrintHttp();
-			arrayhttpconv.add(http);
+		if(undertcp==1){
+			httpConv protoHttp = new httpConv(packetAfterTcp, key);
+			if (http==1||all==1) {
+				protoHttp.PrintHttp();
+			}
+			arrayhttpconv.add(protoHttp);
 		}
 	}
 	public void PrintConv(ArrayList<httpConv> httpconv){
@@ -312,7 +348,7 @@ class ParserCap{
 		for(httpConv b:arrayhttpconv){
 			
 			cbuf = new char[b.data.length];
-		System.out.println("ID : "+b.id);
+			System.out.println("      ID : "+b.id);
 		    for (int i = 0; i < b.data.length; i++){
 		    		if(b.data[i]>= 0x20 && b.data[i] < 0x7F){
 		            	cbuf[i] = (char) b.data[i];
