@@ -132,39 +132,3 @@ class Layer4{
 		return packetAfterUdp;
 	}
 }
-
-
-
-
-
-/*
-
-Si nouvelle seq :
-	id =1
-	stocknextseq
-	Si seq = acknum ou next seq num je me rappel plus
-		->id =1
-	Sinon 
-		->id=2
-		stocknextseq
-processus qui a chaque nextseq associe un id 
-SI on a cette nextseq alors on recupere l'id correspondant
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/

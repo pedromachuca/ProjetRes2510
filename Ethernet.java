@@ -1,17 +1,29 @@
 import java.io.*;
 
 class Ethernet{
-	public int PrintEth(byte[] data){
+
+	byte [] data=null;
+
+	public Ethernet(byte [] data1){
+		this.data=data1;
+	}
+	
+	public void PrintEth(){
+
 		System.out.println("Protocol: Ethernet    ");
 		System.out.print("Mac DST              ");
 		System.out.println("Mac SRC  ");
+
 		for(int i=0; i<6; i++){
 			System.out.format("%02X ", data[i]);    
 		}
 		System.out.print("   ");
+
 		for(int i=6; i<12; i++){
 			System.out.format("%02X ", data[i]);    
 		}
+	}   
+	public int nextType(){
 		byte data1 = 0x0000;
 		for(int i=12; i<14;i++){
 			data1+= data[i];
@@ -26,6 +38,6 @@ class Ethernet{
 				break;
 		}
 		return 0;
-	}   
+	}
 }
 

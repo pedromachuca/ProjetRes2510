@@ -13,10 +13,7 @@ class httpConv{
 	}
 
 	public void PrintHttp(){
-		 // for (int i = 0; i < data.length; i++){
-		 // 	System.out.format("%02X", data[i]);
-		 // }
-        // put data into this char array
+
         char[] cbuf = new char[data.length];
         for (int i = 0; i < data.length; i++){
         		if(data[i]>= 0x20 && data[i] < 0x7F){
@@ -29,7 +26,8 @@ class httpConv{
             		cbuf[i]='.';
             	}
         }
-        System.out.println("\n      TCP content : HTTP");
+        System.out.println("\n      TCP content : HTTP ");
+        System.out.println("      ID : "+this.id);
         System.out.print("      ");
         for (int i=0; i<data.length ; i++){
         		if(i!=0&&cbuf[i-1]=='\n'){

@@ -1,42 +1,73 @@
 import java.io.*;
 import java.util.*; 
-
+		
 class ParserCap{
+
 	public static void main(String[] args){
 		new ParserCap(args);
 	}
+
 	//Initialisation of the attribut of the class
 	FileInputStream inputstream=null;
 	File cap=null;
 	byte[] filecontent=null;
 	long fileLength=0;
-	int	packetLength=0;
 	//offset de départ pour ignorer le Global Header
 	int startPacket=24;
-	int endPacket=0;
 	ArrayList<httpConv> arrayhttpconv=new ArrayList<httpConv>(); 
 	long nextSequenceNb =0;
 	HashMap<Integer, Long> idNextSeq = new HashMap<Integer, Long>();
-	int key=0;
+	int	packetLength=0, endPacket=0, key=0, eth=0, arp=0, ip=0, icmp=0, tcp=0, udp=0, http=0, dhcp=0, all=0;
 
 	public ParserCap(String [] args){
 
 		if (args.length < 1) {
-			System.out.println("No file were specified.\nPlease enter the following command line :\njava Cap file.pcap -option");
+			System.out.println("Not enough arguments\nPlease enter the following command line :\njava Cap file.pcap -option");
+			System.out.println("Available options :\n-eth\n-arp\n-ip\n-tcp\n-udp\n-http\n-dhcp");
 			System.exit(1);
 		}
-		else if(args.length>=2){
+		else if(args.length==1){
+			all=1;
+		}
+		else if(args.length>=3){
 			System.out.println("Too many argument specified.\nPlease enter the following command line :\njava Cap file.pcap -option");
+			System.out.println("Available options :\n-eth\n-arp\n-ip\n-tcp\n-udp\n-http\n-dhcp");
 			System.exit(1);
 		}
 		else{
-			System.out.println("Program starting with the arguments file :"+args[0]);//+"\n option : "+args[1]);
+			System.out.println("\nProgram starting with the arguments :\nFile : "+args[0]+"\nOption : "+args[1]);
+			switch(args[1]){
+				case "-eth":
+					eth=1;
+					break;
+				case "-arp":
+					arp=1;
+					break;
+				case "-ip":
+					ip=1;
+					break;
+				case "-icmp":
+					icmp=1;
+					ip=1;
+					break;
+				case "-tcp":
+					tcp=1;
+					break;
+				case "-udp":
+					udp=1;
+					break;
+				case "-http":
+					http=1;
+					break;
+				case "-dhcp":
+					dhcp=1;
+					break;
+				default:
+					break;
+			}
 		}
 		parsePcap(args);
-		/*Print the pcap in hexa
-		  for(int i=0; i<filecontent.length; i++){
-		  System.out.format("%02X ", filecontent[i]); 
-		  }*/
+	
 		if(testMagicNum(filecontent, 0)){
 			System.out.println( "\nThe file is a pcap format !\nStarting execution ..." );
 		}
@@ -44,6 +75,7 @@ class ParserCap{
 			System.out.println( "\nThe file is not a pcap format !\nExiting program ..." );
 			System.exit(1);
 		}
+
 		int packetNumber = 1;
 		while(true){
 			System.out.format("\n--------------Packet %d ------------------------------------------------------------", packetNumber);
@@ -54,13 +86,12 @@ class ParserCap{
 			packetNumber++;
 			if(endPacket==fileLength){
 				PrintConv(arrayhttpconv);
-						// String s =new String(httpconv);
-					// System.out.println("Conversation : "+s);
 				System.out.println("\n\nEnd of while");
 				break;
 			}
 		}
 	}
+
 	void parsePcap(String [] args){
 		try{
 			cap = new File(args[0]);
@@ -74,27 +105,36 @@ class ParserCap{
 				data = inputstream.read(filecontent);
 			}
 			inputstream.close();
+
 		}catch(FileNotFoundException e){
 			System.out.println(e.getMessage());
 		}catch(IOException e){
 			System.out.println(e.getMessage());
 		}
 	}
+
 	boolean testMagicNum(byte [] filecontent, int which){
+
 		int startMagicNum=0;
 		StringBuilder mNb=null;
+
 		if(which==0){
 			startMagicNum=0;
 			mNb= new StringBuilder("d4c3b2a1");
 		}
-		else{
+		else if(which==1&&filecontent.length>236){
 			startMagicNum=236;
 			mNb= new StringBuilder("63825363");
 		}
+		else{
+			return false;
+		}
+
 		byte [] MagicNum = new byte[4];
 		for(int i=startMagicNum; i<startMagicNum+4; i++){
 			MagicNum[i-startMagicNum] = filecontent[i];
 		}
+
 		StringBuilder sb = new StringBuilder(8);
 		for(byte b: MagicNum){
 			sb.append(String.format("%02x", b));
@@ -106,19 +146,21 @@ class ParserCap{
 			return false;
 		}
 	}
+
 	void PacketHeader(byte [] filecontent){
 
 		int packetHSize = 16;
-		byte[] PacketHeader= new byte[packetHSize];
+		byte[] PacketH= new byte[packetHSize];
 		endPacket = startPacket + packetHSize;
+
 		for(int i=startPacket; i<endPacket; i++){
-			PacketHeader[i-startPacket]=filecontent[i];
+			PacketH[i-startPacket]=filecontent[i];
 		}  
 		System.out.println("\n");
 		//Take the octet 8 and 9 the length is data[9]data[8] (inverted) 
 		//and converted to an int verify the position F203
 		//donne 61955 and 03F2 ->1010
-		packetLength=(PacketHeader[9]<< 8)&0xff00|PacketHeader[8]&0x00ff;
+		packetLength=(PacketH[9]<< 8)&0xff00|PacketH[8]&0x00ff;
 	}
 
 	void PacketParser(byte [] filecontent){	
@@ -127,37 +169,51 @@ class ParserCap{
 		int tcp=0;
 		byte[] packetAfterUdp=null;
 		byte[] packetAfterTcp=null;
+
 		byte[] FirstPacket=new byte[packetLength];
 		for(int i=endPacket; i<packetLength+endPacket; i++){
 			FirstPacket[i-endPacket]=filecontent[i];
 		}
+
 		int ethSize = 14;
 		int endEth = endPacket+ethSize;
-		byte[] EthPacket= new byte[ethSize];
+		byte[] ethPacket= new byte[ethSize];
 		for(int i=endPacket; i<endEth; i++){
-			EthPacket[i-endPacket]=filecontent[i];
+			ethPacket[i-endPacket]=filecontent[i];
 		}
-		Ethernet packetEthernet = new Ethernet();
-		int type = packetEthernet.PrintEth(EthPacket);
+
+		Ethernet packetEthernet = new Ethernet(ethPacket);
+		if (eth==1||all==1) {
+			packetEthernet.PrintEth();
+		}
+		int type = packetEthernet.nextType();
 		endPacket = endPacket+packetLength;
+
 		if(type==14){
 			int arpSize = 28;
 			byte[] packetarp= new byte[arpSize];
 			for(int i=endEth; i<endEth+arpSize; i++){
 				packetarp[i-endEth]=filecontent[i];
 			}
-			Arp packetArp = new Arp();
-			packetArp.PrintArp(packetarp);
+			if (arp==1||all==1) {
+				Arp packetArp = new Arp();
+				packetArp.PrintArp(packetarp);	
+			}
 		}
 		else if(type==8){
+			
 			int ipSize=20;
 			int endIp=endEth+ipSize;
 			byte[] packet= new byte[endPacket];
 			for(int i=endEth; i<endPacket; i++){
 				packet[i-endEth]=filecontent[i];
 			}
-			Ip packetIp = new Ip();
-			int protocol=packetIp.PrintIp(packet);
+
+			Ip packetIp = new Ip(packet);
+			int protocol=packetIp.nextProto();
+			if (ip==1||all==1) {
+				packetIp.PrintIp(icmp);
+			}
 			//packetIp.ReassemblyIp(packet);
 			if(protocol !=0){
 				int thisSize = endPacket-endIp;
@@ -174,19 +230,10 @@ class ParserCap{
 					nextSequenceNb = layer4.nextSeNb();
 					long seqNumber = layer4.seqNb();
 					long ackNumber = layer4.ackNb();
-					// Get a set of the entries
-				    // Set<Integer, Long> set = idNextSeq.entrySet();
-				      
-				    //  // Get an iterator
-				    //  Iterator<Integer> i = set.iterator();
-					
+
 				    if(idNextSeq.isEmpty()){
 				    	key=1;
 				    	idNextSeq.put(key, nextSequenceNb);
-				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
-				                System.out.println("\n1 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
-				         
-     					}
 				    }
 				    else if(idNextSeq.containsValue(seqNumber)||idNextSeq.containsValue(ackNumber)){
 				        
@@ -198,10 +245,6 @@ class ParserCap{
 				            }
      					}
 				    	idNextSeq.put(key, nextSequenceNb);
-				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
-				                System.out.println("\n2 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
-				      
-     					}
 				    }
 				    else if(idNextSeq.containsValue((seqNumber+1))){
 
@@ -214,10 +257,6 @@ class ParserCap{
      					}
      					nextSequenceNb=nextSequenceNb+1;
 				    	idNextSeq.put(key, nextSequenceNb);
-
-				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
-				                System.out.println("\n2 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
-     					}
 				    }
 				    else if(idNextSeq.containsValue((ackNumber-1))){
 				    	 for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
@@ -232,11 +271,7 @@ class ParserCap{
 				    else{
 				    	
 				    	key++;
-				    	System.out.println("ID : "+key);
 				    	idNextSeq.put(key, nextSequenceNb);
-				    	for(Map.Entry<Integer, Long> entry : idNextSeq.entrySet()){
-				                System.out.println("\n3 : Entry :"+entry.getValue()+" Key : "+entry.getKey());
-     					}
 				    }
 					if(packetAfterTcp!=null){
 						tcp=1;
@@ -258,6 +293,7 @@ class ParserCap{
 				dhcp.PrintDhcp(packetAfterUdp);
 			}
 		}
+
 		if(tcp==1){
 			httpConv http = new httpConv(packetAfterTcp, key);
 			http.PrintHttp();
