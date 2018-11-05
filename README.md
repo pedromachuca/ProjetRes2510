@@ -32,7 +32,7 @@
 
   ### How to launch - To start the program please compile this code with the following command line :
   
-     ```javac *a```
+     javac *a
   
   Then to launch the program enter the following command line :
   
@@ -40,6 +40,6 @@
 	
    Arguments:
 
-   argument0 : pcap file (a folder with pcap test file is included) 
-               for example you can enter java ParserCap pcap/arp.pcap
+   argument0 : pcap file (a folder with pcap test file is included)   
+               for example you can enter ```java ParserCap pcap/arp.pcap```  
    argument1 : protocol you wish to display leave it empty if you want to display all protocols
