@@ -1,9 +1,9 @@
-## FFWS :(Far From WireShark)
+## FFWS : Far From WireShark
 
-  wireshark like v1
-  07/11/2018
+  wireshark like v1  
+  07/11/2018  
   
-  Java environment :
+  Java environment :  
   
   Java 11 2018-09-25
   Java(TM) SE Runtime Environment 18.9 (build 11+28)
