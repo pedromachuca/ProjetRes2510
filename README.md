@@ -23,7 +23,7 @@
   7. HTTP  
   8. DHCP  
   	
-  TO DO: DNS, FTP, Fragmentation IP  
+  TODO: DNS, FTP, Fragmentation IP  
 
    You will see later (section Arguments) that you will have to specify the pcap
    file you wish to display. In addition you can specify a particular protocol
@@ -32,7 +32,7 @@
 
   ### How to launch - To start the program please compile this code with the following command line :
   
-     javac *a
+  ```javac *a```
   
   Then to launch the program enter the following command line :
   
