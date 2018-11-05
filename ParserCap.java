@@ -87,29 +87,31 @@ class ParserCap{
 			if(endPacket==fileLength){
 				System.out.format("\n-------------- End Packet -----------------------------------------------------------\n");
 				System.out.println("      \n"+idNextSeq.size()+" HTTP CONVERSATION HAVE BEEN SAVED");
-				System.out.println("Enter a number between 1 and "+idNextSeq.size()+"to display the corresponding conversation");
+				System.out.println("Enter a number between 1 and "+idNextSeq.size()+" to display the corresponding conversation");
 				System.out.println("Enter n instead if you wish to leave the program.");
 				char c =' ';
-				while(!(Character.isDigit(c))&&c!='n'){
+			
+				while(c!='n'){
 					try{
-		  				BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-		        		c = (char)System.in.read();
-						 
-		  			}
-		  			catch(IOException e){
-		  				System.out.println("IOException has been caught");
-		  			}
-		  		}
-		  		if (c=='n'){
-		  			System.out.println("\n\nExiting the program !! ");
-		  			break;	
-		  		}
-		  		else{
-		  			int value=Character.getNumericValue(c);
-		  			//Passer la valeur numérique à arrayhttpconv
-		  			//pour afficher la bonne conversation 
-		  		}
-				PrintConv(arrayhttpconv);
+						BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+                    	c = (char)input.read();
+                         
+					}catch(IOException e){
+						System.out.println("IOException has been caught");
+					}
+					if((c!='n')&&(Character.isDigit(c))&&(Character.getNumericValue(c)>0&&Character.getNumericValue(c)<=idNextSeq.size())){
+						int value=Character.getNumericValue(c);
+						PrintConv(arrayhttpconv, value);
+						System.out.println("\nWould you like to display another conversation ?");
+						System.out.println("If yes, enter a number between 1 and "+idNextSeq.size()+" to display the corresponding conversation");
+						System.out.println("Enter n instead if you wish to leave the program.");
+					}
+					else{
+						System.out.println("You did not enter a correct value...");	
+					}
+					
+				}
+				System.out.println("\n\nExiting the program !! ");
 				break;
 			}
 		}
@@ -318,7 +320,7 @@ class ParserCap{
 			}
 		}
 		
-		if(underudp==1){
+	/*	if(underudp==1){
 			if (testMagicNum(packetAfterUdp, 1)){
 
 				Dhcp protoDhcp = new Dhcp(packetAfterUdp);
@@ -326,7 +328,7 @@ class ParserCap{
 					protoDhcp.PrintDhcp();
 				}
 			}
-		}
+		}*/
 
 		if(undertcp==1){
 			httpConv protoHttp = new httpConv(packetAfterTcp, key);
@@ -336,38 +338,39 @@ class ParserCap{
 			arrayhttpconv.add(protoHttp);
 		}
 	}
-	public void PrintConv(ArrayList<httpConv> httpconv){
+	public void PrintConv(ArrayList<httpConv> httpconv, int nbConv){
 		char[] cbuf;		
 
 		System.out.println("\n      *****************************");
 		System.out.println("      *                           *");
-		System.out.println("      *  Following TCP stream :   *");
+		System.out.println("      *  Following TCP stream "+nbConv+"   *");
 		System.out.println("      *                           *");
 		System.out.println("      *****************************\n");
-
+		
 		for(httpConv b:arrayhttpconv){
-			
-			cbuf = new char[b.data.length];
-			System.out.println("      ID : "+b.id);
-		    for (int i = 0; i < b.data.length; i++){
-		    		if(b.data[i]>= 0x20 && b.data[i] < 0x7F){
-		            	cbuf[i] = (char) b.data[i];
+			if(b.id==nbConv){	
+				cbuf = new char[b.data.length];
+				System.out.println("      ID : "+b.id);
+			    for (int i = 0; i < b.data.length; i++){
+		    			if(b.data[i]>= 0x20 && b.data[i] < 0x7F){
+		        	    	cbuf[i] = (char) b.data[i];
+						}
+		 				else if(b.data[i]==10||b.data[i]==13){
+		 					cbuf[i] = (char) b.data[i];
+						}
+						else{
+		        			cbuf[i]='.';
+		        		}
+		    	}
+				System.out.print("      ");
+				for (int i=0; i<b.data.length ; i++){
+					if(i!=0&&cbuf[i-1]=='\n'){
+						System.out.print("      ");	
 					}
-		 			else if(b.data[i]==10||b.data[i]==13){
-		 				cbuf[i] = (char) b.data[i];
-					}
-					else{
-		        		cbuf[i]='.';
-		        	}
-		    }
-		    System.out.print("      ");
-		    for (int i=0; i<b.data.length ; i++){
-		    		if(i!=0&&cbuf[i-1]=='\n'){
-		    			System.out.print("      ");	
-		    		}
-		    	    System.out.print(cbuf[i]);        		
-		    }
-		System.out.println("");
-		}   		
+					System.out.print(cbuf[i]);        		
+				}
+				System.out.println("");
+			}   		
+		}
 	}
 }
