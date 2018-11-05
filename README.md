@@ -1,9 +1,8 @@
 ## FFWS : Far From WireShark
 
-  wireshark like v1  
-  07/11/2018  
+  wireshark like v1 : 07/11/2018  
   
-  Java environment :  
+  ### Java environment :  
   
   Java 11 2018-09-25  
   Java(TM) SE Runtime Environment 18.9 (build 11+28)  
@@ -13,7 +12,7 @@
   a pcap file as wireshark would. The program is limited i.e. not   
   all protocols can be printed.  
   
-  The following protocols can be displayed :  
+  ### The following protocols can be displayed :  
   
   1.Ethernet  
   2.ARP  
@@ -31,9 +30,9 @@
    to display only the packet information's for this protocol. Or leave it with
    no arguments. By default the program will display all protocols.
 
-  How to launch - To start the program please compile this code with the following command line :
+  ###How to launch - To start the program please compile this code with the following command line :
   
-  javac \\*a
+     javac *a
   
   Then to launch the program enter the following command line :
   
