@@ -14,14 +14,14 @@
   
   ### The following protocols can be displayed :  
   
-  1.Ethernet  
-  2.ARP  
-  3.ICMP  
-  4.IP  
-  5.TCP  
-  6.UDP  
-  7.HTTP  
-  8.DHCP  
+  1. Ethernet  
+  2. ARP  
+  3. ICMP  
+  4. IP  
+  5. TCP  
+  6. UDP  
+  7. HTTP  
+  8. DHCP  
   	
   TO DO: DNS, FTP, Fragmentation IP  
 
@@ -30,13 +30,13 @@
    to display only the packet information's for this protocol. Or leave it with
    no arguments. By default the program will display all protocols.
 
-  ###How to launch - To start the program please compile this code with the following command line :
+  ### How to launch - To start the program please compile this code with the following command line :
   
-     javac *a
+     ```javac *a```
   
   Then to launch the program enter the following command line :
   
-  java ParserCap [argument0] [argument1]
+  ```java ParserCap [argument0] [argument1]```
 	
    Arguments:
 
