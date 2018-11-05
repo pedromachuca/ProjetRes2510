@@ -25,10 +25,10 @@
   	
   TODO: DNS, FTP, Fragmentation IP  
 
-   You will see later (section Arguments) that you will have to specify the pcap
-   file you wish to display. In addition you can specify a particular protocol
-   to display only the packet information's for this protocol. Or leave it with
-   no arguments. By default the program will display all protocols.
+  You will see later (section Arguments) that you will have to specify the pcap
+  file you wish to display. In addition you can specify a particular protocol
+  to display only the packet information's for this protocol. Or leave it with
+  no arguments. By default the program will display all protocols.
 
   ### How to launch - To start the program please compile this code with the following command line :
   
