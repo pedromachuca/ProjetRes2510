@@ -15,23 +15,24 @@ class ParserCap{
 	//offset de départ pour ignorer le Global Header
 	int startPacket=24;
 	ArrayList<httpConv> arrayhttpconv=new ArrayList<httpConv>(); 
+	ArrayList<FtpConv> arrayftpconv=new ArrayList<FtpConv>(); 
 	long nextSequenceNb =0;
 	HashMap<Integer, Long> idNextSeq = new HashMap<Integer, Long>();
-	int	packetLength=0, endPacket=0, key=0, eth=0, arp=0, ip=0, icmp=0, tcp=0, udp=0, http=0, dhcp=0, all=0;
+	int	packetLength=0, endPacket=0, key=0, eth=0, arp=0, ip=0, icmp=0, tcp=0, udp=0, http=0, ftp=0, dhcp=0, all=0, testFtp=0;
 
 	public ParserCap(String [] args){
 
 		if (args.length < 1) {
 			System.out.println("Not enough arguments\nPlease enter the following command line :\njava Cap file.pcap -option");
-			System.out.println("Available options :\n-eth\n-arp\n-ip\n-tcp\n-udp\n-http\n-dhcp");
+			System.out.println("Available options :\n-eth\n-arp\n-ip\n-tcp\n-udp\n-http\n-dhcp\n-ftp");
 			System.exit(1);
 		}
 		else if(args.length==1){
 			all=1;
 		}
-		else if(args.length>=3){
+		else if(args.length>2){
 			System.out.println("Too many argument specified.\nPlease enter the following command line :\njava Cap file.pcap -option");
-			System.out.println("Available options :\n-eth\n-arp\n-ip\n-tcp\n-udp\n-http\n-dhcp");
+			System.out.println("Available options :\n-eth\n-arp\n-ip\n-tcp\n-udp\n-http\n-dhcp\n-ftp");
 			System.exit(1);
 		}
 		else{
@@ -48,7 +49,6 @@ class ParserCap{
 					break;
 				case "-icmp":
 					icmp=1;
-					ip=1;
 					break;
 				case "-tcp":
 					tcp=1;
@@ -61,6 +61,9 @@ class ParserCap{
 					break;
 				case "-dhcp":
 					dhcp=1;
+					break;
+				case "-ftp":
+					ftp=1;
 					break;
 				default:
 					break;
@@ -86,12 +89,17 @@ class ParserCap{
 			packetNumber++;
 			if(endPacket==fileLength){
 				System.out.format("\n-------------- End Packet -----------------------------------------------------------\n");
-				System.out.println("      \n"+idNextSeq.size()+" HTTP CONVERSATION HAVE BEEN SAVED");
-				System.out.println("Enter a number between 1 and "+idNextSeq.size()+" to display the corresponding conversation");
-				System.out.println("Enter n instead if you wish to leave the program.");
+				if(idNextSeq.size() !=0&&testFtp==0){
+					System.out.println("      \n"+idNextSeq.size()+" TCP CONVERSATION HAVE BEEN SAVED");
+					System.out.println("Enter a number between 1 and "+idNextSeq.size()+" to display the corresponding conversation");
+					System.out.println("Enter n instead if you wish to leave the program.");
+				}
+				if(testFtp==1){
+					PrintFtpConv(arrayftpconv);
+				}
 				char c =' ';
 			
-				while(c!='n'){
+				while((c!='n')&&(idNextSeq.size()!=0)&&testFtp==0){
 					try{
 						BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
                     	c = (char)input.read();
@@ -194,6 +202,8 @@ class ParserCap{
 		int undertcp=0;
 		byte[] packetAfterUdp=null;
 		byte[] packetAfterTcp=null;
+		int srcPort=0;
+		int dstPort=0;
 
 		byte[] FirstPacket=new byte[packetLength];
 		for(int i=endPacket; i<packetLength+endPacket; i++){
@@ -237,7 +247,10 @@ class ParserCap{
 			Ip packetIp = new Ip(packet);
 			int protocol=packetIp.nextProto();
 			if (ip==1||all==1) {
-				packetIp.PrintIp(icmp);
+				packetIp.PrintIp();
+			}
+			if (icmp==1||all==1) {
+				packetIp.PrintIcmp();
 			}
 			//packetIp.ReassemblyIp(packet);
 			if(protocol !=0){
@@ -250,7 +263,7 @@ class ParserCap{
 
 				Layer4 layer4 = new Layer4(packetL4, packetLength);
 				if(protocol==1){
-					packetAfterTcp=new byte[layer4.sizeHttp()];
+					packetAfterTcp=new byte[layer4.sizeAfterTcp()];
 					packetAfterTcp=layer4.ParseTcp();
 
 					if (tcp==1||all==1) {
@@ -259,7 +272,8 @@ class ParserCap{
 					nextSequenceNb = layer4.nextSeNb();
 					long seqNumber = layer4.seqNb();
 					long ackNumber = layer4.ackNb();
-
+					dstPort = layer4.dPort();
+					srcPort = layer4.sPort();
 				    if(idNextSeq.isEmpty()){
 				    	key=1;
 				    	idNextSeq.put(key, nextSequenceNb);
@@ -320,7 +334,7 @@ class ParserCap{
 			}
 		}
 		
-	/*	if(underudp==1){
+		if(underudp==1){
 			if (testMagicNum(packetAfterUdp, 1)){
 
 				Dhcp protoDhcp = new Dhcp(packetAfterUdp);
@@ -328,14 +342,22 @@ class ParserCap{
 					protoDhcp.PrintDhcp();
 				}
 			}
-		}*/
+		}
 
-		if(undertcp==1){
+		if((undertcp==1)&&(srcPort!=21&&dstPort!=21)){
 			httpConv protoHttp = new httpConv(packetAfterTcp, key);
 			if (http==1||all==1) {
 				protoHttp.PrintHttp();
 			}
 			arrayhttpconv.add(protoHttp);
+		}
+		else if(undertcp==1&&(srcPort==21||dstPort==21)){
+			FtpConv protoFtp = new FtpConv(packetAfterTcp);
+			if (ftp==1||all==1) {
+				protoFtp.PrintFtp();
+			}
+			arrayftpconv.add(protoFtp);
+			testFtp=1;
 		}
 	}
 	public void PrintConv(ArrayList<httpConv> httpconv, int nbConv){
@@ -372,5 +394,37 @@ class ParserCap{
 				System.out.println("");
 			}   		
 		}
+	}
+	public void PrintFtpConv(ArrayList<FtpConv> arrayftpconv){
+		char[] cbuf;		
+
+		System.out.println("\n      *****************************");
+		System.out.println("      *                           *");
+		System.out.println("      *  FTP conversation :       *");
+		System.out.println("      *                           *");
+		System.out.println("      *****************************\n");
+		
+		for(FtpConv b:arrayftpconv){
+				cbuf = new char[b.data.length];
+			    for (int i = 0; i < b.data.length; i++){
+		    			if(b.data[i]>= 0x20 && b.data[i] < 0x7F){
+		        	    	cbuf[i] = (char) b.data[i];
+						}
+		 				else if(b.data[i]==10||b.data[i]==13){
+		 					cbuf[i] = (char) b.data[i];
+						}
+						else{
+		        			cbuf[i]='.';
+		        		}
+		    	}
+				System.out.print("      ");
+				for (int i=0; i<b.data.length ; i++){
+					if(i!=0&&cbuf[i-1]=='\n'){
+						System.out.print("      ");	
+					}
+					System.out.print(cbuf[i]);        		
+				}
+				System.out.println("");
+		}   		
 	}
 }

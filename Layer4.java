@@ -102,7 +102,7 @@ class Layer4{
 		System.out.println("\n      [Next Sequence Number :"+nextSeqNum+"]");
 	}
 
-	public int sizeHttp(){
+	public int sizeAfterTcp(){
 		int headerLength=(data[12]>>4)&0x0f;
 		int dataLength=packetLength-34-headerLength*4;
 		return dataLength;
@@ -118,6 +118,12 @@ class Layer4{
 
 	public long ackNb(){
 		return ackNumber;
+		}
+	public int sPort(){
+		return srcPort;
+	}
+	public int dPort(){
+		return dstPort;
 	}
 
 	public void PrintUdp(){
